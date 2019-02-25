@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import cv from 'opencv';
+const cv = require('opencv4nodejs');
 
 export default class ImageAnalyse{
     
@@ -16,46 +16,38 @@ export default class ImageAnalyse{
         console.log("traitement of file : "+imageFile);
         var lowThresh = 50;
         var highThresh = 500;
-        var nIters = 10;
-        var maxArea = 2500;
-        var self = this;
-        var GREEN = [0, 255, 0]; // B, G, R
-        var WHITE = [255, 255, 255]; // B, G, R
-        var RED = [0, 0, 255]; // B, G, R
-        cv.readImage(imageFile, function(err, im){
+        var red = new cv.Vec3(0, 0, 255);
+        var self= this;
+        cv.imreadAsync(imageFile, function(err, im){
             if (err) throw err;
-            var width = im.width();
-            var height = im.height();
+            var width = im.cols;
+            var height = im.rows;
             if (width < 1 || height < 1) throw new Error('Image has no size');
-            
-            var big = new cv.Matrix(height, width);
-            var all = new cv.Matrix(height, width);
+       
             var screen = im;
             var im_canny = im.copy();
-            im_canny.convertGrayscale();
-            im_canny.canny(lowThresh, highThresh);
-            im_canny.dilate(nIters);
-
-            var contours = im_canny.findContours();
-            const lineType = 8;
-            const maxLevel = 0;
-            const thickness = 1;
+            im_canny = im_canny.bgrToGray();
+            im_canny = im_canny.threshold(200, 255, cv.THRESH_BINARY);
+            im_canny = im_canny.canny(lowThresh, highThresh);
+            var contours = im_canny.findContours(cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
             
             var datas = {}
             var cpt = 0;
-            for(var i = 0; i < contours.size(); i++) {
-                for(var j = 0; j < contours.cornerCount(i); ++j) {
-                    if(j%10==0){
-                        var point = contours.point(i, j);
+            for(var i = 0; i < contours.length; i++) {
+                var points = contours[i].getPoints();
+                for(var j in points){
+                    var point= points[j];
+                    if(cpt%50==0){
                         datas[cpt+'_x'] = point.x;
                         datas[cpt+'_y'] = point.y;
-                        screen.line([point.x - 5, point.y], [point.x + 5, point.y], RED);
-                        screen.line([point.x, point.y - 5], [point.x, point.y + 5], RED);
-                        cpt++;
+                        screen.drawCircle(point, 2, red);
                     }
+                    cpt++;
                 }
             }
-            //screen.save('./tmp/'+self.getFileName(imageFile)+'.png');
+            //im_canny= im_canny.drawContours(contours, red);
+            //console.log(datas);
+            cv.imwrite('./tmp/'+self.getFileName(imageFile)+'.png', screen);
             callback(imageFile, datas, agent);
             //console.log('Images saved to ./tmp');
         });

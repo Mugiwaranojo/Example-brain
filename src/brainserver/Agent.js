@@ -32,6 +32,7 @@ export default class Agent{
     }
     
     onFinishLoads(){
+        //console.log(this.trainTab);
         this.net.train(this.trainTab);
         console.log("finish train "+this.trainTab.length+" files");
     }

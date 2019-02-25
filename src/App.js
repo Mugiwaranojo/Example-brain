@@ -25,13 +25,14 @@ class App extends Component {
         this.setState({
             pictures: picture
         });
-        console.log(picture.item(0));
+        console.log(picture[picture.length-1]);
         const url = '/file';
         const formData = new FormData();
-        formData.append('file',picture.item(0));
+        formData.append('file',picture[picture.length-1]);
+        var self= this;
         post(url, formData,  {headers: {'content-type': 'multipart/form-data'}}).then((response)=>{
             console.log(response.data);
-            this.setState({
+            self.setState({
                 dataPictures: response.data
             });
         });
